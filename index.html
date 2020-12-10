@@ -61,7 +61,7 @@
 			</ul>
 		</nav>
 		<nav>
-          总文章数 3
+          总文章数 4
         </nav>
 		<nav class="header-smart-menu">
     		
@@ -159,6 +159,161 @@
           </div>
           <div id="js-content" class="content-ll">
             
+  
+    <article id="post-call、apply和bind模拟实现" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/12/10/call%E3%80%81apply%E5%92%8Cbind%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/">call、apply和bind模拟实现</a>
+    </h1>
+  
+
+        
+        <a href="/2020/12/10/call%E3%80%81apply%E5%92%8Cbind%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/" class="archive-article-date">
+  	<time datetime="2020-12-10T14:00:15.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-12-10</time>
+</a>
+		
+		<!-- 需要添加的位置 -->
+        <!-- 开始添加字数统计-->
+        
+          <div style="margin-top:10px;">
+    <span class="post-time">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-keyboard-o"></i>
+        <span class="post-meta-item-text">  字数统计: </span>
+        <span class="post-count">1k字</span>
+      </span>
+    </span>
+
+    <span class="post-time">
+      &nbsp; | &nbsp;
+      <span class="post-meta-item-icon">
+        <i class="fa fa-hourglass-half"></i>
+        <span class="post-meta-item-text">  阅读时长: </span>
+        <span class="post-count">4分</span>
+      </span>
+    </span>
+</div>
+          
+        <!-- 添加完成 -->
+		
+		<!-- 添加代码 -->
+       
+		
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+	<!-- 开始添加分类-->
+	  
+    <!-- 结束添加分类-->
+      
+        <h1 id="call和apply的模拟实现"><a href="#call和apply的模拟实现" class="headerlink" title="call和apply的模拟实现"></a>call和apply的模拟实现</h1><p>call、apply和bind这三个方法都可以改变函数内部this指向。区别是call，apply是立即指向该函数，而bind是返回一个新的函数，用于下次调用。</p>
+<p>其中，call和apply的区别是传递参数的方式不同，call是一个一个传入。例如call（this，arg1，arg2，arg3）。但是apply是通过一个数组传递，比如apply（this，[arg1，arg2，arg3]）。</p>
+<p><strong>首先介绍call</strong>：call()方法在使用一个指定的this值和若干个指定的参数值的前提下调用某个函数或方法。</p>
+<p>举个栗子：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//比如我们有一个foo对象</span></span><br><span class="line"><span class="keyword">var</span> foo = &#123;</span><br><span class="line">    value: <span class="number">1</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">//还有一个bar函数</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">bar</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="built_in">this</span>.value);</span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">//我们希望实现</span></span><br><span class="line">bar.call(foo); <span class="comment">//1</span></span><br></pre></td></tr></table></figure>
+
+<p>那么我们该怎么模拟实现这两个效果呢？试想当调用call的时候，把foo对象改造成如下：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> foo = &#123;</span><br><span class="line">    value: <span class="number">1</span> ,</span><br><span class="line">    bar ：<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="built_in">this</span>.value);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line">foo.bar(); <span class="comment">//1</span></span><br></pre></td></tr></table></figure>
+
+<p>也就是，把bar函数作为foo对象的一个属性，实现了同样的效果。但是这样foo对象多了一个属性，这可不行！不过没有关系，我们再用delete删除它不就好了~</p>
+<p><strong>所以模拟实现思路为：</strong></p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//第一步：将函数设置为对象的属性</span></span><br><span class="line">foo.fn = bar;</span><br><span class="line"><span class="comment">//第二步：执行该函数</span></span><br><span class="line">foo.fn();</span><br><span class="line"><span class="comment">//第三步：删除该函数</span></span><br><span class="line"><span class="keyword">delete</span> foo.fn;</span><br></pre></td></tr></table></figure>
+
+<p>fn是对象的属性名，反正最后要删除它，起什么都无所谓。</p>
+<p>根据这个思路，我们可以尝试着写<strong>初版的newCall函数</strong>：</p>
+<p>首先要思考call是从哪里来的，每个JavaScript函数其实都是Function对象（构造函数），它的原型对象就是Function.prototype，这个原型对象里有很多属性可以使用，比如call就是这个原型对象的属性。因此我们要模拟就必须在原型对象里添加新的和call一样的属性，call作为一种属性同时也是一种方法。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//初版</span></span><br><span class="line"><span class="built_in">Function</span>.prototype.newCall = <span class="function"><span class="keyword">function</span>(<span class="params">context</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// 首先要获得要调用call的函数，用this可以获取</span></span><br><span class="line">    <span class="comment">// 给形参对象添加一个函数命名为fn，也就是调用call的函数</span></span><br><span class="line">    context.fn = <span class="built_in">this</span>;</span><br><span class="line">    context.fn();</span><br><span class="line">    <span class="keyword">delete</span> context.fn;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">//测试一下</span></span><br><span class="line"><span class="keyword">var</span> foo = &#123;</span><br><span class="line">    value: <span class="number">1</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">bar</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="built_in">this</span>.value);</span><br><span class="line">&#125;</span><br><span class="line">bar.newCall(foo); <span class="comment">//1</span></span><br></pre></td></tr></table></figure>
+
+<p>这样就得到了跟call一样的方法，不过战斗依然没有结束！</p>
+<p>因为call(this，arg1，arg2，arg3)，除了this还有参数。</p>
+<p><strong>注意的点：</strong></p>
+<p>1、接受不定长参数——Arguments对象中取值，第二个到最后一个参数，然后放到一个数组中。</p>
+<p>2、this参数可以传null，当为null的时候，视为指向window</p>
+<p>3、函数是可以有返回值的！</p>
+<p><strong>难点解析</strong>——接受不定长参数</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 举个栗子arguments = &#123;</span></span><br><span class="line"><span class="comment">//      0: foo,</span></span><br><span class="line"><span class="comment">//      1: &#x27;kevin&#x27;,</span></span><br><span class="line"><span class="comment">//      2: 18,</span></span><br><span class="line"><span class="comment">//      length: 3</span></span><br><span class="line"><span class="comment">// &#125;</span></span><br><span class="line"><span class="comment">// 因为arguments是类数组对象，所以可以用for循环</span></span><br><span class="line"><span class="keyword">var</span> args = [];</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">1</span>, len = <span class="built_in">arguments</span>.length; i &lt; len; i++) &#123;</span><br><span class="line">    args.push(<span class="string">&#x27;arguments[&#x27;</span> + i + <span class="string">&#x27;]&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"> <span class="comment">// 执行后 args为 [&quot;arguments[1]&quot;, &quot;arguments[2]&quot;, &quot;arguments[3]&quot;]</span></span><br></pre></td></tr></table></figure>
+
+<p>不定长的参数问题解决了，我们接着要把这个参数数组放到要执行的函数的参数里面去</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将数组里的元素作为多个参数放进函数的形参里</span></span><br><span class="line">context.fn(args.join(<span class="string">&#x27;,&#x27;</span>))</span><br><span class="line"><span class="comment">//可是es6语法实现es3的call不合适</span></span><br></pre></td></tr></table></figure>
+
+<p>但是可以用eval()方法拼成一个函数，比如：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">eval</span>(<span class="string">&#x27;context.fn(&#x27;</span> + args +<span class="string">&#x27;)&#x27;</span>)</span><br><span class="line"><span class="comment">//1、这里 args 会自动调用 Array.toString() 这个方法。</span></span><br><span class="line"><span class="comment">//2、eval作用：看成&lt;scrip&gt;标签，只接受原始字符串作为参数，用JavaScript的解析</span></span><br><span class="line"><span class="comment">//引擎来解析这一堆字符串里面的内容</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>最终版</strong></p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Function</span>.prototype.newCall = <span class="function"><span class="keyword">function</span> (<span class="params">context</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> context = context || <span class="built_in">window</span>;</span><br><span class="line">    context.fn = <span class="built_in">this</span>;</span><br><span class="line">    <span class="keyword">var</span> args = [];</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">1</span>, len = <span class="built_in">arguments</span>.length; i &lt; len; i++) &#123;</span><br><span class="line">        args.push(<span class="string">&#x27;arguments[&#x27;</span> + i + <span class="string">&#x27;]&#x27;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">var</span> result = <span class="built_in">eval</span>(<span class="string">&#x27;context.fn(&#x27;</span> + args +<span class="string">&#x27;)&#x27;</span>);</span><br><span class="line">    <span class="keyword">delete</span> context.fn;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">// 测试一下</span></span><br><span class="line"><span class="keyword">var</span> value = <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> obj = &#123;</span><br><span class="line">    value: <span class="number">1</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">bar</span>(<span class="params">name, age</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="built_in">this</span>.value);</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">        value: <span class="built_in">this</span>.value,</span><br><span class="line">        name: name,</span><br><span class="line">        age: age</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">bar.call2(<span class="literal">null</span>); <span class="comment">// 2</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(bar.call2(obj, <span class="string">&#x27;kevin&#x27;</span>, <span class="number">18</span>));</span><br><span class="line"><span class="comment">// 1</span></span><br><span class="line"><span class="comment">// Object &#123;</span></span><br><span class="line"><span class="comment">//    value: 1,</span></span><br><span class="line"><span class="comment">//    name: &#x27;kevin&#x27;,</span></span><br><span class="line"><span class="comment">//    age: 18</span></span><br><span class="line"><span class="comment">// &#125;</span></span><br></pre></td></tr></table></figure>
+
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">call</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">apply</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+      
+	<div class="article-category tagcloud">
+		<i class="icon-book icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="/categories/JavaScript//" class="article-tag-list-link color1">JavaScript</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/12/10/call%E3%80%81apply%E5%92%8Cbind%E6%A8%A1%E6%8B%9F%E5%AE%9E%E7%8E%B0/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
   
     <article id="post-哈希表总结" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
@@ -628,6 +783,14 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">随手拍</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">call</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color1">apply</a>
               </li>
             
             <div class="clearfix"></div>
